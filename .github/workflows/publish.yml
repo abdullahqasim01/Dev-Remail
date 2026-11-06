@@ -17,7 +17,9 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: npx tsc --noEmit
-      - run: npx eslint src
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test
 
   publish:
     needs: check
