@@ -4,19 +4,30 @@
 
 **A local, Resend-compatible mail sandbox for development.**
 
-Point the official Resend SDK at it, see every email in a mailbox UI, and get signed webhooks in your app. No API keys, no real emails.
+Point the official Resend SDK at it, see every email in a mailbox UI, and get signed webhooks in your app. No real API key needed, and no real emails sent.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 </div>
 
-![Dev-Remail mailbox](docs/screenshots/mailbox.png)
+<div align="center">
+
+[![Watch the Dev-Remail launch video](docs/video/dev-remail-launch.jpg)](docs/video/dev-remail-launch.mp4)
+
+**[▶ Watch the 25-second video](docs/video/dev-remail-launch.mp4)**
+
+</div>
 
 > Unofficial project, not affiliated with or endorsed by Resend. "Resend" is a trademark of its owner and is used here only to describe API compatibility.
 
 ## Why
 
-Every developer on a team that uses [Resend](https://resend.com) needs their own API key just to test or continue development, and a typo can email real users. Dev-Remail is a drop-in replacement for the Resend API that runs on your machine or a shared dev server. Nothing leaves it.
+If your app sends email with [Resend](https://resend.com), local development usually means one of two things:
+
+- **Use a real Resend API key.** Every developer needs access to one, and a typo or a bad test script can email real users.
+- **Use something other than Resend locally**, such as an SMTP catcher, a console logger or a mock. Your local code then takes a different path from production, and flows like webhooks and inbound email are hard or impossible to test.
+
+Dev-Remail removes that choice. It is a drop-in replacement for the Resend API that runs on your machine or a shared dev server, so you keep the same Resend SDK and the same code path as production, with no real key. Nothing leaves it.
 
 ## Features
 
@@ -27,6 +38,8 @@ Every developer on a team that uses [Resend](https://resend.com) needs their own
 - **Signed webhooks**: `email.sent`, `email.delivered`, `email.bounced`, `email.complained` and `email.received`, verified by `resend.webhooks.verify()`. Includes retries, a delivery log and re-send.
 - **Bounce simulation**: use `bounced@resend.dev` or `complained@resend.dev` as recipients.
 - **Single container**: Next.js and SQLite, with data kept in a volume.
+
+![Mailbox](docs/screenshots/mailbox.png)
 
 ![Settings](docs/screenshots/settings.png)
 
@@ -157,3 +170,5 @@ To publish by hand: `DOCKER_USER=<user> npm run docker:publish`.
 ## License
 
 [MIT](LICENSE) © Abdullah Qasim
+
+The launch video was made with [/brag](https://github.com/latent-spaces/brag) and [Hyperframes](https://hyperframes.heygen.com/). Its audio is not covered by the MIT license: music by Sascha Ende, [ende.app](https://ende.app/en) ([CC BY 4.0](https://ende.app/en/standard-license)); sound effects by [Kenney](https://kenney.nl/) and unicae_games (CC0).

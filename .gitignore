@@ -44,3 +44,6 @@ next-env.d.ts
 /data
 /src/generated
 !.env.example
+
+# /brag video workspace (final video is copied to docs/ when published)
+/brag-output*/
