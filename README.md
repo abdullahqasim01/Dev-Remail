@@ -118,7 +118,7 @@ Requires Node.js 22+.
 npm install
 npm run dev        # generates the Prisma client, applies migrations, starts on http://localhost:6245
 npm run lint
-npx tsc --noEmit
+npm run typecheck
 npm run build && npm test     # integration tests, run with the official Resend SDK
 ```
 
@@ -142,7 +142,7 @@ scripts/migrate.mjs               migration runner (also used by the Docker entr
 
 ## Contributing
 
-Issues and pull requests are welcome. Before opening a PR, run `npm run lint`, `npx tsc --noEmit` and `npm run build && npm test`; CI runs the same checks. For API changes, please check behaviour against the official Resend SDK.
+Issues and pull requests are welcome. Before opening a PR, run `npm run lint`, `npm run typecheck` and `npm run build && npm test`; CI runs the same checks. For API changes, please check behaviour against the official Resend SDK.
 
 ## Releasing (maintainers)
 

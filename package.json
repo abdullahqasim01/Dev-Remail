@@ -13,7 +13,8 @@
     "db:migrate": "node scripts/migrate.mjs",
     "docker:build": "docker build -t dev-remail .",
     "docker:publish": "docker buildx build --platform linux/amd64,linux/arm64 -t $DOCKER_USER/dev-remail:latest --push .",
-    "test": "node --test \"tests/*.test.mjs\""
+    "test": "node --test \"tests/*.test.mjs\"",
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.10.1",
