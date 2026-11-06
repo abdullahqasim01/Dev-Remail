@@ -1,104 +1,152 @@
-# dev-maill
+<div align="center">
 
-A fake **Resend** for development. Your app keeps using the official Resend SDK, but instead of the real API (and an API key per developer) it talks to this server. Emails are captured, shown in a mailbox UI, and webhooks are sent back to your app, signed exactly like Resend's.
+# Dev-Remail
 
-- No real email is ever sent, and no real API key is needed (any key is accepted).
-- Create fake end-user **inboxes** (`alice@gmail.com`, `bob@yahoo.com`, …) to test multi-user flows.
-- Send mail **from an inbox to your app's domain** to trigger the `email.received` webhook.
-- One container, SQLite storage, no auth on the UI.
+**A local, Resend-compatible mail sandbox for development.**
 
-## Run it
+Point the official Resend SDK at it, see every email in a mailbox UI, and get signed webhooks in your app. No API keys, no real emails.
 
-```bash
-docker compose up --build        # UI + API on http://localhost:3000
-```
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-or pull the published image (see [Publishing](#publishing-the-image)):
+</div>
 
-```bash
-docker run -p 3000:3000 -v dev-maill-data:/data <your-dockerhub-user>/dev-maill
-```
+![Dev-Remail mailbox](docs/screenshots/mailbox.png)
 
-Local development without Docker:
+> Unofficial project, not affiliated with or endorsed by Resend. "Resend" is a trademark of its owner and is used here only to describe API compatibility.
 
-```bash
-npm install
-npm run dev                      # generates the Prisma client, migrates, starts Next.js
-```
+## Why
 
-## Set it up (once)
+Every developer on a team that uses [Resend](https://resend.com) needs their own API key just to test or continue development, and a typo can email real users. Dev-Remail is a drop-in replacement for the Resend API that runs on your machine or a shared dev server. Nothing leaves it.
 
-Open the UI → **Settings**:
+## Features
 
-1. **Add your app's domain**, e.g. `test.com`. It is verified instantly (no DNS). The API only accepts `from` addresses on registered domains, like Resend does.
-2. **Set the webhook URL** of your app, e.g. `http://localhost:3000/api/webhooks/resend`, copy the **signing secret** into your app's env, and choose the events. Inside Docker, `localhost` URLs are automatically routed to your host machine.
-3. In **Mailboxes**, create inboxes for your fake users. Inboxes must **not** use a registered app domain (they are end users, so use `gmail.com`, `yahoo.com`, …).
+- **Drop-in compatible**: works with the official Resend SDK. Only an environment variable changes.
+- **Mailbox UI**: browse mail per inbox with HTML, text and details views, attachments, reply and compose. No login.
+- **Multi-user testing**: create as many fake end-user inboxes as you like (`alice@gmail.com`, `bob@yahoo.com`).
+- **Inbound email**: send mail from an inbox to your app's domain to trigger the `email.received` webhook.
+- **Signed webhooks**: `email.sent`, `email.delivered`, `email.bounced`, `email.complained` and `email.received`, verified by `resend.webhooks.verify()`. Includes retries, a delivery log and re-send.
+- **Bounce simulation**: use `bounced@resend.dev` or `complained@resend.dev` as recipients.
+- **Single container**: Next.js and SQLite, with data kept in a volume.
 
-## Use it from your app
+![Settings](docs/screenshots/settings.png)
 
-Only environment changes, no code changes:
+## Quick start
 
 ```bash
-RESEND_API_KEY=re_anything
-RESEND_BASE_URL=http://localhost:3000     # read by the official Node SDK
+docker run -p 6245:6245 -v dev-remail-data:/data <dockerhub-user>/dev-remail
 ```
 
-or `new Resend(key, { baseUrl: "http://localhost:3000" })`. Other SDKs have an equivalent base-URL option.
+or from source with Docker Compose:
+
+```bash
+git clone <repo-url> && cd dev-remail
+docker compose up --build
+```
+
+Open **http://localhost:6245**, then:
+
+1. **Settings → Domains**: add your app's sending domain, e.g. `test.com`. It's verified instantly and needs no DNS.
+2. **Settings → Webhook**: set your app's webhook URL and copy the signing secret into your app's env.
+3. **Mailboxes → New**: create inboxes for your fake users. Use other domains such as `gmail.com`. Inboxes can't use a registered app domain.
+
+## Use it in your app
+
+No code changes, only environment variables:
+
+```bash
+RESEND_API_KEY=re_anything                 # any value is accepted
+RESEND_BASE_URL=http://localhost:6245      # read by the official Node SDK
+```
+
+or in code: `new Resend(key, { baseUrl: "http://localhost:6245" })`. Other Resend SDKs have an equivalent base-URL option. Keep your real key and no base URL in production.
+
+Webhook verification stays the same as with Resend:
+
+```ts
+const event = resend.webhooks.verify({
+  payload: rawBody,
+  headers: { id: req.headers["svix-id"], timestamp: req.headers["svix-timestamp"], signature: req.headers["svix-signature"] },
+  webhookSecret: process.env.RESEND_WEBHOOK_SECRET!,
+});
+```
+
+Inside Docker, webhook URLs using `localhost` are routed to your host machine automatically.
 
 ## How mail flows
 
 | Action | Result | Webhooks |
 |---|---|---|
-| App sends via SDK to `alice@gmail.com` | Appears in Alice's inbox and in **API activity** | `email.sent`, then `email.delivered` |
-| App sends to an address with no inbox | Recorded in **API activity**, marked delivered | same |
-| App sends to `bounced@resend.dev` / `complained@resend.dev` | Simulated outcome (use `+label` suffixes freely) | `email.sent`, then `email.bounced` / `email.complained` |
-| Alice composes to `support@test.com` (registered domain) | Stored as received mail | `email.received` |
+| Your app sends to `alice@gmail.com` through the SDK | Appears in Alice's inbox and in **API activity** | `email.sent`, then `email.delivered` |
+| Your app sends to an address with no inbox | Recorded in **API activity**, marked delivered | same |
+| Your app sends to `bounced@resend.dev` or `complained@resend.dev` | Simulated outcome (a `+label` suffix is fine) | `email.sent`, then `email.bounced` or `email.complained` |
+| Alice composes to `support@test.com` (a registered domain) | Stored as received mail | `email.received` |
 | Alice composes to Bob (both inboxes) | Appears in Bob's inbox | none |
 
-Webhooks are signed with Standard Webhooks / Svix (`svix-*` and `webhook-*` headers), so `resend.webhooks.verify(...)` works unchanged. Failed deliveries are retried (2s, 10s, 30s); see **Webhook log** to inspect payloads and re-send.
+Failed webhook deliveries are retried after 2s, 10s and 30s. Inspect payloads and re-send from **Webhook log**.
 
 ## API compatibility
 
-Implemented, matching the official Node SDK (`resend@6.x`) request/response shapes and error format:
+Request and response shapes and error formats match the official Node SDK (`resend@6.x`), and every endpoint below is covered by tests run with the real SDK.
 
-- `POST /emails`, `GET /emails`, `GET /emails/:id` (incl. `Idempotency-Key`, tags, headers, attachments by content or `path` URL)
-- `POST /emails/batch` (`x-batch-validation: strict | permissive`)
-- `GET /emails/:id/attachments[/:id]`
-- Receiving: `GET /emails/receiving[/:id]`, `.../attachments[/:id]`, plus the raw `.eml` download used by `emails.receiving.forward()`
-- Domains: `POST/GET /domains`, `GET/PATCH/DELETE /domains/:id`, `POST /domains/:id/verify`
+| Area | Endpoints |
+|---|---|
+| Sending | `POST /emails`, `GET /emails`, `GET /emails/:id`, `GET /emails/:id/attachments[/:id]`, `Idempotency-Key` support |
+| Batch | `POST /emails/batch` (`x-batch-validation: strict \| permissive`) |
+| Receiving | `GET /emails/receiving[/:id]`, `.../attachments[/:id]`, raw `.eml` download used by `emails.receiving.forward()` |
+| Domains | `POST /domains`, `GET /domains`, `GET\|PATCH\|DELETE /domains/:id`, `POST /domains/:id/verify` |
 
-Not implemented (returns 404 or a validation error): scheduled sends (`scheduled_at` is accepted but the email is delivered immediately), templates, audiences/contacts/broadcasts, API-key management, and Resend's own webhook CRUD (configure the webhook in the UI instead).
+**Not supported:** scheduled sends (`scheduled_at` is accepted but the email is delivered immediately), templates, audiences, contacts, broadcasts, API-key management, and Resend's webhook management API (configure the webhook in the UI instead).
 
 ## Configuration
 
-| Env var | Default | Purpose |
+| Variable | Default | Description |
 |---|---|---|
-| `DATABASE_URL` | `file:./data/dev-maill.db` (`file:/data/dev-maill.db` in Docker) | SQLite file |
-| `WEBHOOK_SECRET` | generated on first start | fixed signing secret (`whsec_…`) |
-| `PUBLIC_URL` | derived from the request | base of attachment/raw download URLs |
-| `PORT` | `3000` | listen port |
+| `PORT` | `6245` | Listen port |
+| `DATABASE_URL` | `file:./data/dev-remail.db` (`file:/data/dev-remail.db` in Docker) | SQLite file |
+| `WEBHOOK_SECRET` | generated on first start | Fixed signing secret (`whsec_…`) |
+| `PUBLIC_URL` | derived from the request | Base of attachment and raw-email download URLs |
 
-## Publishing the image
+## Development
+
+Requires Node.js 22+.
 
 ```bash
-docker login
-DOCKER_USER=<your-dockerhub-user> npm run docker:publish   # builds linux/amd64 + linux/arm64 and pushes :latest
+npm install
+npm run dev        # generates the Prisma client, applies migrations, starts on http://localhost:6245
+npm run lint
+npx tsc --noEmit
 ```
 
-### Automatic publishing on tag
+**Stack:** Next.js (App Router; route handlers serve the Resend API) · Prisma 7 with SQLite (better-sqlite3 adapter) · Tailwind CSS.
 
-`.github/workflows/publish.yml` builds and pushes the image (amd64 + arm64) to Docker Hub whenever you push a tag starting with `v`. It runs typecheck and lint first.
+**Layout**
 
-One-time setup in the GitHub repo (Settings → Secrets and variables → Actions):
-- `DOCKERHUB_USERNAME`: your Docker Hub username
-- `DOCKERHUB_TOKEN`: a Docker Hub access token with write permission
+```
+src/app/emails, src/app/domains   Resend-compatible API routes
+src/app/api/ui                    internal API used by the UI
+src/app/page.tsx, activity/,      UI pages: mailbox, API activity,
+  webhooks/, settings/            webhook log, settings
+src/lib                           mail service, webhooks, validation, serializers
+prisma/                           schema and SQL migrations
+scripts/migrate.mjs               migration runner (also used by the Docker entrypoint)
+```
 
-Then release with:
+**Changing the schema:** edit `prisma/schema.prisma`, then add a new `prisma/migrations/NNNN_name/migration.sql`. Generate the SQL with `npx prisma migrate diff --from-schema <old> --to-schema prisma/schema.prisma --script`. Migrations run automatically at start.
+
+## Contributing
+
+Issues and pull requests are welcome. Before opening a PR, run `npm run lint` and `npx tsc --noEmit`. For API changes, please check behaviour against the official Resend SDK.
+
+## Releasing (maintainers)
+
+Pushing a tag that starts with `v` runs `.github/workflows/publish.yml`. It checks types and lint, then builds a multi-arch (amd64 + arm64) image and pushes it to Docker Hub. Set the repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` once, then:
 
 ```bash
 git tag v0.1.0 && git push origin v0.1.0     # publishes :0.1.0, :0.1 and :latest
 ```
 
-## Stack
+To publish by hand: `DOCKER_USER=<user> npm run docker:publish`.
 
-Next.js (App Router, route handlers for the API) · Prisma 7 + SQLite (better-sqlite3 adapter) · Tailwind CSS. Migrations in `prisma/migrations` are applied at container start by `scripts/migrate.mjs`, so the runtime image does not need the Prisma CLI. To change the schema: edit `prisma/schema.prisma`, then generate SQL with `npx prisma migrate diff --from-schema <old> --to-schema prisma/schema.prisma --script` into a new `prisma/migrations/NNNN_name/migration.sql`.
+## License
+
+[MIT](LICENSE) © Abdullah Qasim
