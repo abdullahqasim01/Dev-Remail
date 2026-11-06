@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// A "verified" sending/receiving domain owned by the app under test (like test.com on Resend).
+model Domain {
+  id        String   @id
+  name      String   @unique
+  region    String   @default("us-east-1")
+  createdAt DateTime @default(now())
+}
+
+/// A fake end user mailbox (alice@gmail.com).
+model Inbox {
+  id         String     @id
+  address    String     @unique
+  name       String?
+  createdAt  DateTime   @default(now())
+  deliveries Delivery[]
+  sent       Email[]    @relation("SenderInbox")
+}
+
+/// Every message in the system.
+/// direction: outbound = sent by the app through the API
+///            inbound  = sent by an inbox user to an address on a registered domain
+///            internal = sent between inboxes only
+model Email {
+  id            String       @id
+  direction     String
+  from          String
+  to            String       @default("[]")
+  cc            String       @default("[]")
+  bcc           String       @default("[]")
+  replyTo       String       @default("[]")
+  subject       String       @default("")
+  html          String?
+  text          String?
+  headers       String?
+  tags          String       @default("[]")
+  messageId     String
+  lastEvent     String       @default("delivered")
+  scheduledAt   DateTime?
+  createdAt     DateTime     @default(now())
+  senderInboxId String?
+  senderInbox   Inbox?       @relation("SenderInbox", fields: [senderInboxId], references: [id], onDelete: SetNull)
+  deliveries    Delivery[]
+  attachments   Attachment[]
+
+  @@index([direction, createdAt])
+}
+
+/// A copy of an email visible in an inbox.
+model Delivery {
+  id      String  @id
+  emailId String
+  inboxId String
+  read    Boolean @default(false)
+  email   Email   @relation(fields: [emailId], references: [id], onDelete: Cascade)
+  inbox   Inbox   @relation(fields: [inboxId], references: [id], onDelete: Cascade)
+
+  @@unique([emailId, inboxId])
+  @@index([inboxId])
+}
+
+model Attachment {
+  id          String  @id
+  emailId     String
+  filename    String?
+  contentType String
+  disposition String  @default("attachment")
+  contentId   String?
+  size        Int
+  data        Bytes
+  email       Email   @relation(fields: [emailId], references: [id], onDelete: Cascade)
+
+  @@index([emailId])
+}
+
+/// Single-row table (id = 1).
+model Settings {
+  id            Int     @id
+  webhookUrl    String?
+  webhookSecret String
+  /// comma separated event names
+  webhookEvents String  @default("email.sent,email.delivered,email.bounced,email.complained,email.received")
+  webhookActive Boolean @default(true)
+}
+
+model WebhookDelivery {
+  id            String   @id
+  eventType     String
+  emailId       String?
+  url           String
+  payload       String
+  /// pending | success | failed
+  status        String   @default("pending")
+  statusCode    Int?
+  responseBody  String?
+  attempts      Int      @default(0)
+  createdAt     DateTime @default(now())
+  lastAttemptAt DateTime?
+
+  @@index([createdAt])
+}
+
+model IdempotencyKey {
+  key          String   @id
+  requestHash  String
+  statusCode   Int
+  responseBody String
+  createdAt    DateTime @default(now())
+}
