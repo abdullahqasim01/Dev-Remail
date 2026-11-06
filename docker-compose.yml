@@ -5,7 +5,9 @@ services:
     build: .
     image: dev-remail:latest
     ports:
-      - "6245:6245"
+      # Bound to localhost on purpose: the UI has no authentication.
+      # Use "6245:6245" only on a trusted network.
+      - "127.0.0.1:6245:6245"
     volumes:
       - dev-remail-data:/data
     environment:

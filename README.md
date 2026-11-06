@@ -33,13 +33,13 @@ Every developer on a team that uses [Resend](https://resend.com) needs their own
 ## Quick start
 
 ```bash
-docker run -p 6245:6245 -v dev-remail-data:/data <dockerhub-user>/dev-remail
+docker run -p 127.0.0.1:6245:6245 -v dev-remail-data:/data abdullahqasim01/dev-remail
 ```
 
 or from source with Docker Compose:
 
 ```bash
-git clone <repo-url> && cd dev-remail
+git clone https://github.com/abdullahqasim01/dev-remail.git && cd dev-remail
 docker compose up --build
 ```
 
@@ -97,6 +97,10 @@ Request and response shapes and error formats match the official Node SDK (`rese
 
 **Not supported:** scheduled sends (`scheduled_at` is accepted but the email is delivered immediately), templates, audiences, contacts, broadcasts, API-key management, and Resend's webhook management API (configure the webhook in the UI instead).
 
+## Security
+
+Dev-Remail is a development tool and has **no authentication**: anyone who can reach the port can read all mail and change the webhook URL. The server also makes outgoing requests to the webhook URL and to attachment `path` URLs you send. Keep it on localhost or a trusted network, and don't expose it to the internet. The provided Docker setup binds to `127.0.0.1` for this reason; publish the port more widely only when you mean to.
+
 ## Configuration
 
 | Variable | Default | Description |
@@ -115,7 +119,10 @@ npm install
 npm run dev        # generates the Prisma client, applies migrations, starts on http://localhost:6245
 npm run lint
 npx tsc --noEmit
+npm run build && npm test     # integration tests, run with the official Resend SDK
 ```
+
+The tests boot the production build on a free port with a throwaway SQLite database, so they never touch your real data.
 
 **Stack:** Next.js (App Router; route handlers serve the Resend API) · Prisma 7 with SQLite (better-sqlite3 adapter) · Tailwind CSS.
 
@@ -135,7 +142,7 @@ scripts/migrate.mjs               migration runner (also used by the Docker entr
 
 ## Contributing
 
-Issues and pull requests are welcome. Before opening a PR, run `npm run lint` and `npx tsc --noEmit`. For API changes, please check behaviour against the official Resend SDK.
+Issues and pull requests are welcome. Before opening a PR, run `npm run lint`, `npx tsc --noEmit` and `npm run build && npm test`; CI runs the same checks. For API changes, please check behaviour against the official Resend SDK.
 
 ## Releasing (maintainers)
 
