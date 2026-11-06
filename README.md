@@ -85,6 +85,20 @@ docker login
 DOCKER_USER=<your-dockerhub-user> npm run docker:publish   # builds linux/amd64 + linux/arm64 and pushes :latest
 ```
 
+### Automatic publishing on tag
+
+`.github/workflows/publish.yml` builds and pushes the image (amd64 + arm64) to Docker Hub whenever you push a tag starting with `v`. It runs typecheck and lint first.
+
+One-time setup in the GitHub repo (Settings → Secrets and variables → Actions):
+- `DOCKERHUB_USERNAME`: your Docker Hub username
+- `DOCKERHUB_TOKEN`: a Docker Hub access token with write permission
+
+Then release with:
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0     # publishes :0.1.0, :0.1 and :latest
+```
+
 ## Stack
 
 Next.js (App Router, route handlers for the API) · Prisma 7 + SQLite (better-sqlite3 adapter) · Tailwind CSS. Migrations in `prisma/migrations` are applied at container start by `scripts/migrate.mjs`, so the runtime image does not need the Prisma CLI. To change the schema: edit `prisma/schema.prisma`, then generate SQL with `npx prisma migrate diff --from-schema <old> --to-schema prisma/schema.prisma --script` into a new `prisma/migrations/NNNN_name/migration.sql`.
