@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Compose, type ComposeInit } from "@/components/Compose";
 import { EmailView } from "@/components/EmailView";
@@ -9,18 +9,30 @@ interface Inbox { id: string; address: string; name: string | null; unread: numb
 interface Msg { id: string; from: string; to: string[]; subject: string; snippet: string; createdAt: string; read: boolean; attachments: number }
 interface SettingsView { domains: { id: string; name: string }[] }
 
+const subscribeHash = (cb: () => void) => {
+  window.addEventListener("hashchange", cb);
+  return () => window.removeEventListener("hashchange", cb);
+};
+
 export default function MailboxPage() {
   const { data: inboxes, reload: reloadInboxes } = usePoll<Inbox[]>("/api/ui/inboxes");
   const { data: settings } = usePoll<SettingsView>("/api/ui/settings", 10_000);
   const [inboxId, setInboxId] = useState<string | null>(() => {
     try {
-      return typeof window === "undefined" ? null : localStorage.getItem("dm.inbox");
+      return typeof window === "undefined" ? null : localStorage.getItem("dr.inbox");
     } catch {
       return null;
     }
   });
   const [folder, setFolder] = useState<"inbox" | "sent">("inbox");
-  const [selected, setSelected] = useState<string | null>(null);
+  // The open message lives in the URL hash (/#<id>) so it can be linked and survives reloads.
+  const hash = useSyncExternalStore(subscribeHash, () => window.location.hash.slice(1), () => "");
+  const [picked, setPicked] = useState<string | null | undefined>(undefined);
+  const selected = picked === undefined ? hash || null : picked;
+  const setSelected = (id: string | null) => {
+    setPicked(id);
+    history.replaceState(null, "", id ? `#${id}` : window.location.pathname);
+  };
   const [compose, setCompose] = useState<ComposeInit | null>(null);
   const [adding, setAdding] = useState(false);
   const [newAddr, setNewAddr] = useState("");
@@ -29,7 +41,7 @@ export default function MailboxPage() {
 
   const current = inboxes?.find((i) => i.id === inboxId) ?? inboxes?.[0] ?? null;
   useEffect(() => {
-    if (current) try { localStorage.setItem("dm.inbox", current.id); } catch {}
+    if (current) try { localStorage.setItem("dr.inbox", current.id); } catch {}
   }, [current?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: messages, reload: reloadMessages } = usePoll<Msg[]>(

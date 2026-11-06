@@ -84,7 +84,7 @@ function parseList(field: string, value: unknown, required: boolean): ParsedAddr
 
 export async function validateEmail(p: ApiEmailPayload): Promise<ValidatedEmail> {
   if (!p || typeof p !== "object") throw Errors.validation("Invalid request body.");
-  if (p.template) throw Errors.validation("Templates are not supported by dev-maill.");
+  if (p.template) throw Errors.validation("Templates are not supported by Dev-Remail.");
 
   if (p.from === undefined || p.from === null || p.from === "") throw Errors.missingField("from");
   const from = parseAddress(p.from);
@@ -241,7 +241,7 @@ export async function sendOutbound(payload: ApiEmailPayload): Promise<{ id: stri
       text: v.text,
       headers: v.headers ? JSON.stringify(v.headers) : null,
       tags: JSON.stringify(v.tags),
-      messageId: `<${id}@dev-maill.local>`,
+      messageId: `<${id}@dev-remail.local>`,
       lastEvent: outcome,
       attachments: { create: attachments },
       deliveries: {
@@ -340,7 +340,7 @@ export async function sendFromInbox(input: InboxSendInput) {
       subject: input.subject,
       html: input.html || null,
       text: input.text || null,
-      messageId: `<${id}@dev-maill.local>`,
+      messageId: `<${id}@dev-remail.local>`,
       lastEvent: "delivered",
       senderInboxId: sender.id,
       attachments: { create: attachments },

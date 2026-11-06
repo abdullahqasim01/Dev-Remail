@@ -54,7 +54,7 @@ export const Errors = {
     new ApiError(
       403,
       "validation_error",
-      `The ${domain} domain is not verified. Please, add and verify your domain in the dev-maill settings.`,
+      `The ${domain} domain is not verified. Please, add and verify your domain in the Dev-Remail settings.`,
     ),
 };
 
@@ -69,7 +69,7 @@ export function handler<A extends unknown[]>(
       return await fn(req, ...args);
     } catch (e) {
       if (e instanceof ApiError) return e.toResponse();
-      console.error("[dev-maill] unhandled error", e);
+      console.error("[dev-remail] unhandled error", e);
       return NextResponse.json(
         { statusCode: 500, name: "internal_server_error", message: "Internal server error." },
         { status: 500 },

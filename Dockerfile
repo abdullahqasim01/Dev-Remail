@@ -22,8 +22,8 @@ WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     HOSTNAME=0.0.0.0 \
-    PORT=3000 \
-    DATABASE_URL=file:/data/dev-maill.db \
+    PORT=6245 \
+    DATABASE_URL=file:/data/dev-remail.db \
     RUNNING_IN_DOCKER=1
 
 COPY --from=build --chown=node:node /app/.next/standalone ./
@@ -36,7 +36,7 @@ COPY --chown=node:node docker-entrypoint.sh ./docker-entrypoint.sh
 RUN mkdir -p /data && chown node:node /data && chmod +x docker-entrypoint.sh
 VOLUME /data
 USER node
-EXPOSE 3000
+EXPOSE 6245
 
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+process.env.PORT+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"

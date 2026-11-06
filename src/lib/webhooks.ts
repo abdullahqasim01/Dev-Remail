@@ -53,7 +53,7 @@ async function attempt(deliveryId: string): Promise<boolean> {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "user-agent": "dev-maill-webhooks/1.0",
+        "user-agent": "dev-remail-webhooks/1.0",
         // Resend uses Svix headers; the Resend SDK maps them to Standard Webhooks.
         "svix-id": msgId,
         "svix-timestamp": timestamp,
@@ -122,7 +122,7 @@ export async function emitSequence(
     try {
       await emitOne(e.type, e.data, e.emailId);
     } catch (err) {
-      console.error("[dev-maill] webhook emit failed", err);
+      console.error("[dev-remail] webhook emit failed", err);
     }
   }
 }

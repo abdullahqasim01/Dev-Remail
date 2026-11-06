@@ -1,15 +1,18 @@
 {
-  "name": "dev-maill",
+  "name": "dev-remail",
   "version": "0.1.0",
   "private": true,
+  "description": "A local, Resend-compatible mail sandbox with a mailbox UI and signed webhooks.",
+  "license": "MIT",
+  "author": "Abdullah Qasim",
   "scripts": {
-    "dev": "prisma generate && node scripts/migrate.mjs && next dev",
+    "dev": "prisma generate && node scripts/migrate.mjs && next dev -p 6245",
     "build": "prisma generate && next build",
-    "start": "next start",
+    "start": "next start -p 6245",
     "lint": "eslint",
     "db:migrate": "node scripts/migrate.mjs",
-    "docker:build": "docker build -t dev-maill .",
-    "docker:publish": "docker buildx build --platform linux/amd64,linux/arm64 -t $DOCKER_USER/dev-maill:latest --push ."
+    "docker:build": "docker build -t dev-remail .",
+    "docker:publish": "docker buildx build --platform linux/amd64,linux/arm64 -t $DOCKER_USER/dev-remail:latest --push ."
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.10.1",
@@ -28,6 +31,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
+    "resend": "^6.37.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

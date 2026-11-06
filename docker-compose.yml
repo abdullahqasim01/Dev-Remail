@@ -1,21 +1,23 @@
+name: dev-remail
+
 services:
-  dev-maill:
+  dev-remail:
     build: .
-    image: dev-maill:latest
+    image: dev-remail:latest
     ports:
-      - "3000:3000"
+      - "6245:6245"
     volumes:
-      - dev-maill-data:/data
+      - dev-remail-data:/data
     environment:
       # Optional: public URL used in attachment/raw download links returned by the API.
-      # PUBLIC_URL: http://localhost:3000
+      # PUBLIC_URL: http://localhost:6245
       # Optional: fixed webhook signing secret (otherwise generated on first start).
       # WEBHOOK_SECRET: whsec_...
-      PORT: "3000"
+      PORT: "6245"
     extra_hosts:
       # lets webhooks reach your app on the host (localhost is rewritten to this) on Linux too
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
 volumes:
-  dev-maill-data:
+  dev-remail-data:

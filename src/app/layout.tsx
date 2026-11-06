@@ -3,7 +3,7 @@ import "./globals.css";
 import { Nav } from "@/components/Nav";
 
 export const metadata: Metadata = {
-  title: "dev-maill",
+  title: "Dev-Remail",
   description: "A local Resend-compatible mail server with a mailbox UI.",
 };
 

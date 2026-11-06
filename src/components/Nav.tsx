@@ -18,7 +18,7 @@ export function Nav() {
   return (
     <nav className="flex w-56 shrink-0 flex-col gap-1 border-r border-line bg-panel p-3">
       <div className="mb-4 px-2 pt-1">
-        <div className="text-base font-bold tracking-tight">dev-maill</div>
+        <div className="text-base font-bold tracking-tight">Dev-Remail</div>
         <div className="text-xs text-muted">Fake Resend for development</div>
       </div>
       {items.map((i) => {

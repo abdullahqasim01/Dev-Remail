@@ -85,10 +85,10 @@ export function Compose({
             From <span className="font-medium text-ink">{inbox.address}</span>
           </div>
           <div className="flex items-center gap-2">
-            <input className="input" placeholder="To" value={to} onChange={(e) => setTo(e.target.value)} list="dm-recipients" autoFocus />
+            <input className="input" placeholder="To" value={to} onChange={(e) => setTo(e.target.value)} list="dr-recipients" autoFocus />
             {!showCc && <button className="btn" onClick={() => setShowCc(true)}>Cc/Bcc</button>}
           </div>
-          <datalist id="dm-recipients">
+          <datalist id="dr-recipients">
             {inboxAddresses.filter((a) => a !== inbox.address).map((a) => <option key={a} value={a} />)}
           </datalist>
           {showCc && (
